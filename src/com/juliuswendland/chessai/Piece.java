@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class Piece extends JLabel {
     public int positionIndex;
-    public static ImageIcon[][] icons = new ImageIcon[2][6];
+    private final ImageIcon[][] icons = new ImageIcon[2][6];
 
     public Piece(int positionIndex, int type, int color) {
         this.positionIndex = positionIndex;

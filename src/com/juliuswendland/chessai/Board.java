@@ -14,6 +14,9 @@ public class Board extends JLayeredPane {
         setPreferredSize(boardSize);
         setBounds(0, 0, boardSize.width, boardSize.height);
         setLayout(new GridLayout(8, 8));
+        DragAndDropHandler dragAndDropHandler = new DragAndDropHandler(this);
+        addMouseListener(dragAndDropHandler);
+        addMouseMotionListener(dragAndDropHandler);
 
         // Build the chess board by squares
         for(int rank = 0; rank < 8; rank++) {
@@ -34,8 +37,7 @@ public class Board extends JLayeredPane {
     private void renderPiecesInitially() {
         for(Piece piece : pieces) {
             Square square = (Square) getComponent(piece.positionIndex);
-            square.add(piece);
-            square.revalidate();
+            square.addPiece(piece);
         }
     }
 }
