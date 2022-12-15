@@ -2,10 +2,13 @@ package com.juliuswendland.chessai;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.LinkedList;
 
 public class Board extends JLayeredPane {
     public static final Color DARK_COLOR = new Color(150, 80, 14);
     public static final Color LIGHT_COLOR = new Color(242, 165, 92);
+    public LinkedList<Piece> pieces = new LinkedList<>();
+
     public Board() {
         Dimension boardSize = new Dimension(1000, 1000);
         setPreferredSize(boardSize);
@@ -20,6 +23,19 @@ public class Board extends JLayeredPane {
                 Square square = new Square(squareColor, rank, file);
                 add(square, JLayeredPane.DEFAULT_LAYER);
              }
+        }
+
+        // Add a piece for testing
+        pieces.add(new Piece(2, 5, 1));
+
+        renderPiecesInitially();
+    }
+
+    private void renderPiecesInitially() {
+        for(Piece piece : pieces) {
+            Square square = (Square) getComponent(piece.positionIndex);
+            square.add(piece);
+            square.revalidate();
         }
     }
 }
