@@ -45,8 +45,22 @@ public class Board extends JLayeredPane {
 
     public void generatePseudoLegalMoves() {
         pseudoLegalMoves.clear();
+
         for(Piece piece : pieces) {
-            if(piece.getType() == 1) {
+            if(piece.getType() == 0) {
+                generateKingMoves(piece);
+            }
+            else if(piece.getType() == 1) {
+                generateStraightSlidingMoves(piece);
+                generateDiagonalSlidingMoves(piece);
+            }
+            else if(piece.getType() == 2) {
+                generateDiagonalSlidingMoves(piece);
+            }
+            else if(piece.getType() == 3) {
+                generateKnightMoves(piece);
+            }
+            else if(piece.getType() == 4) {
                 generateStraightSlidingMoves(piece);
             }
         }
@@ -63,20 +77,129 @@ public class Board extends JLayeredPane {
                 currentIndex += OFFSETS[directionIndex];
                 Square targetSquare = (Square) getComponent(currentIndex);
 
-                System.out.println(targetSquare.getIndex());
+                if(targetSquare.getPiece() == null) {
+                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                }
+                // Square is blocked by friendly piece
+                else if(targetSquare.getPiece().getColor() == piece.getColor()) {
+                    break;
+                }
+                // Square is blocked by enemy piece, attack enemy piece
+                else {
+                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    break;
+                }
+            }
+        }
+    }
+
+    private void generateDiagonalSlidingMoves(Piece piece) {
+        Square startSquare = (Square) getComponent(piece.positionIndex);
+        int[] numberOfSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
+
+        for(int directionIndex = 1; directionIndex <= 7; directionIndex += 2) {
+            int currentIndex = startSquare.getIndex();
+
+            for(int i = 0; i < numberOfSquaresToBorder[directionIndex]; i++) {
+                currentIndex += OFFSETS[directionIndex];
+                Square targetSquare = (Square) getComponent(currentIndex);
 
                 if(targetSquare.getPiece() == null) {
                     pseudoLegalMoves.add(new Move(startSquare, targetSquare));
                 }
                 // Square is blocked by friendly piece
                 else if(targetSquare.getPiece().getColor() == piece.getColor()) {
-                    System.out.println("true");
                     break;
                 }
                 // Square is blocked by enemy piece, attack enemy piece
-                else if(targetSquare.getPiece().getColor() != piece.getColor()) {
+                else {
                     pseudoLegalMoves.add(new Move(startSquare, targetSquare));
                     break;
+                }
+            }
+        }
+    }
+
+    private void generateKingMoves(Piece piece) {
+        Square startSquare = (Square) getComponent(piece.positionIndex);
+        int[] numberOfSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
+
+        for(int directionIndex = 0; directionIndex <= 7; directionIndex++) {
+            if(numberOfSquaresToBorder[directionIndex] == 0) continue;
+
+            Square targetSquare = (Square) getComponent(piece.positionIndex + OFFSETS[directionIndex]);
+            if(targetSquare.getPiece() == null) {
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+            }
+            else if(targetSquare.getPiece().getColor() == piece.getColor()) {
+                continue;
+            }
+            else {
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+            }
+        }
+    }
+
+    private void generateKnightMoves(Piece piece) {
+        Square startSquare = (Square) getComponent(piece.positionIndex);
+        int[] numberOfSquaresToBorder;
+
+        // Make the knight move in its typical "L" shape
+        for(int directionIndex = 0; directionIndex <= 6; directionIndex += 2) {
+            numberOfSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
+            int currentIndex = piece.positionIndex;
+
+            // Make the two steps in one direction
+            Square tempSquare = null;
+            if(numberOfSquaresToBorder[directionIndex] >= 2) {
+                currentIndex += (OFFSETS[directionIndex] * 2);
+                tempSquare = (Square) getComponent(currentIndex);
+            }
+
+            if(tempSquare == null) continue;
+
+            numberOfSquaresToBorder = tempSquare.getNumberOfSquaresToBorder();
+
+            // Last move was horizontal, so next move must be vertical
+            if(directionIndex == 0 || directionIndex == 4) {
+                if(numberOfSquaresToBorder[2] > 0) {
+                    Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[2]);
+
+                    if(targetSquare.getPiece() == null) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    } else if(targetSquare.getPiece().getColor() != piece.getColor()) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    }
+                }
+                if(numberOfSquaresToBorder[6] > 0) {
+                    Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[6]);
+
+                    if(targetSquare.getPiece() == null) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    } else if(targetSquare.getPiece().getColor() != piece.getColor()) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    }
+                }
+            }
+            // Last move was vertical, so next move must be horizontal
+            else {
+                if(numberOfSquaresToBorder[0] > 0) {
+                    Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[0]);
+
+                    if(targetSquare.getPiece() == null) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    } else if(targetSquare.getPiece().getColor() != piece.getColor()) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    }
+                }
+                if(numberOfSquaresToBorder[4] > 0) {
+                    Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[4]);
+
+                    if(targetSquare.getPiece() == null) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    } else if(targetSquare.getPiece().getColor() != piece.getColor()) {
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    }
                 }
             }
         }

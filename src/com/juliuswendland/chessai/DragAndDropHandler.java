@@ -79,8 +79,9 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         Component componentAtMouse = board.findComponentAt(x, y);
 
         Square square;
-        if(componentAtMouse instanceof Piece) {
+        if(componentAtMouse instanceof Piece piece) {
             square = (Square) componentAtMouse.getParent();
+            board.pieces.remove(piece);
         } else {
             square = (Square) componentAtMouse;
         }
