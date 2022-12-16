@@ -16,8 +16,8 @@ public class Square extends JPanel {
     }
 
     public void addPiece(Piece piece) {
-        add(piece);
         this.piece = piece;
+        add(this.piece);
         revalidate();
     }
 

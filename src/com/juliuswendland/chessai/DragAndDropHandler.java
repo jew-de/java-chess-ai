@@ -72,7 +72,7 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         y = Math.min(y, yMax);
         y = Math.max(0, y);
 
-        Component componentAtMouse = board.getComponentAt(x, y);
+        Component componentAtMouse = board.findComponentAt(x, y);
 
         Square square;
         if(componentAtMouse instanceof Piece) {
