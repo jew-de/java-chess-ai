@@ -9,6 +9,8 @@ import java.util.Map;
 public class Board extends JLayeredPane {
     public static final Color DARK_COLOR = new Color(150, 80, 14);
     public static final Color LIGHT_COLOR = new Color(242, 165, 92);
+    public static final Color DARK_COLOR_HIGHLIGHT = new Color(133, 28, 120);
+    public static final Color LIGHT_COLOR_HIGHLIGHT = new Color(191, 82, 178);
     public LinkedList<Piece> pieces = new LinkedList<>();
     public LinkedList<Move> pseudoLegalMoves = new LinkedList<>();
     public static final int[] OFFSETS = {-1, -9, -8, -7, 1, 9, 8, 7};

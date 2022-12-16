@@ -46,7 +46,11 @@ public class Square extends JPanel {
     }
 
     public void setTargetSquare() {
-        setBackground(Color.RED);
+        if(squareColor == Board.LIGHT_COLOR) {
+            setBackground(Board.LIGHT_COLOR_HIGHLIGHT);
+        } else {
+            setBackground(Board.DARK_COLOR_HIGHLIGHT);
+        }
         isTargetSquare = true;
     }
 
