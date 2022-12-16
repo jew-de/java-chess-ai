@@ -2,14 +2,16 @@ package com.juliuswendland.chessai;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class Board extends JLayeredPane {
     public static final Color DARK_COLOR = new Color(150, 80, 14);
     public static final Color LIGHT_COLOR = new Color(242, 165, 92);
     public LinkedList<Piece> pieces = new LinkedList<>();
 
-    public Board() {
+    public Board(String fen) {
         Dimension boardSize = new Dimension(1000, 1000);
         setPreferredSize(boardSize);
         setBounds(0, 0, boardSize.width, boardSize.height);
@@ -28,10 +30,43 @@ public class Board extends JLayeredPane {
              }
         }
 
-        // Add a piece for testing
-        pieces.add(new Piece(2, 5, 1));
+        // Add pieces based on given FEN-String
+        interpretFenString(fen);
 
         renderPiecesInitially();
+    }
+
+    private void interpretFenString(String fen) {
+        Map<Character, Integer> fenToPiece = new HashMap<>();
+        fenToPiece.put('k', 0);
+        fenToPiece.put('q', 1);
+        fenToPiece.put('b', 2);
+        fenToPiece.put('n', 3);
+        fenToPiece.put('r', 4);
+        fenToPiece.put('p', 5);
+
+        char[] characters = fen.toCharArray();
+        int currentIndex = 0;
+
+        for(char character : characters) {
+            char lowerCaseCharacter = Character.toLowerCase(character);
+
+            if(fenToPiece.containsKey(lowerCaseCharacter)) {
+                // Character resembles a piece
+                int type = fenToPiece.get(lowerCaseCharacter);
+                int color = Character.isUpperCase(character) ? 1 : 0;
+                Square square = (Square) getComponent(currentIndex);
+                square.addPiece(new Piece(currentIndex, type, color));
+                currentIndex++;
+                continue;
+            }
+
+            int numberOfSquares = Character.getNumericValue(character);
+            // Character is a slash
+            if(numberOfSquares == -1) continue;
+            currentIndex += numberOfSquares;
+
+        }
     }
 
     private void renderPiecesInitially() {

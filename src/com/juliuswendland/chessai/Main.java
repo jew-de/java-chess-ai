@@ -14,7 +14,7 @@ public class Main {
         mainFrame.setVisible(true);
         mainFrame.requestFocus();
         mainFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        mainFrame.add(new Board());
+        mainFrame.add(new Board("rnbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBKQBNR"));
         mainFrame.pack();
         mainFrame.setLocationRelativeTo(null);
     }
