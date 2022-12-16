@@ -10,6 +10,7 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
     Board board;
     private Piece pieceToMove = null;
     private int xAdjustment, yAdjustment;
+    private Square startSquare = null;
 
     public DragAndDropHandler(Board board) {
         this.board = board;
@@ -29,8 +30,11 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         xAdjustment = parentLocation.x - e.getX();
         yAdjustment = parentLocation.y - e.getY();
         pieceToMove = (Piece) componentAtMouse;
-        pieceToMove.setLocation(e.getX() + xAdjustment, e.getY() + yAdjustment);
 
+        board.displayMoves(pieceToMove);
+        startSquare = (Square) board.getComponent(pieceToMove.positionIndex);
+
+        pieceToMove.setLocation(e.getX() + xAdjustment, e.getY() + yAdjustment);
         board.add(pieceToMove, JLayeredPane.DRAG_LAYER);
         board.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
     }
@@ -76,15 +80,30 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
 
         Square square;
         if(componentAtMouse instanceof Piece) {
-            // Square already has piece on it, replace the piece
             square = (Square) componentAtMouse.getParent();
-            square.removePiece();
         } else {
             square = (Square) componentAtMouse;
         }
-        square.addPiece(pieceToMove);
-        pieceToMove.positionIndex = square.getIndex();
-        board.setCursor(null);
+
+        if(!square.isTargetSquare) {
+            // Reset piece back to original position
+            startSquare.addPiece(pieceToMove);
+            pieceToMove = null;
+        } else {
+            // Make the move
+            square.removePiece();
+            square.addPiece(pieceToMove);
+            pieceToMove.positionIndex = square.getIndex();
+            board.setCursor(null);
+        }
+
+        // Reset all squares
+        for(int i = 0; i < 64; i++) {
+            Square squareToReset = (Square) board.getComponent(i);
+            squareToReset.reset();
+        }
+
+        board.generatePseudoLegalMoves();
     }
 
     @Override

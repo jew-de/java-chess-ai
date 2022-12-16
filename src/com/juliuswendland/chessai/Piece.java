@@ -6,9 +6,13 @@ import java.util.Objects;
 public class Piece extends JLabel {
     public int positionIndex;
     private final ImageIcon[][] icons = new ImageIcon[2][6];
+    private int type;
+    private final int color;
 
     public Piece(int positionIndex, int type, int color) {
         this.positionIndex = positionIndex;
+        this.type = type;
+        this.color = color;
 
         setVisible(true);
         loadIcons();
@@ -31,5 +35,14 @@ public class Piece extends JLabel {
         icons[1][3] = new ImageIcon(Objects.requireNonNull(getClass().getResource("icons/light/light_knight.png")));
         icons[1][4] = new ImageIcon(Objects.requireNonNull(getClass().getResource("icons/light/light_rook.png")));
         icons[1][5] = new ImageIcon(Objects.requireNonNull(getClass().getResource("icons/light/light_pawn.png")));
+    }
+
+    // Getters and setters
+    public int getType() {
+        return type;
+    }
+
+    public int getColor() {
+        return color;
     }
 }

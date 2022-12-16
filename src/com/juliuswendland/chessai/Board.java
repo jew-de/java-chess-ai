@@ -10,6 +10,8 @@ public class Board extends JLayeredPane {
     public static final Color DARK_COLOR = new Color(150, 80, 14);
     public static final Color LIGHT_COLOR = new Color(242, 165, 92);
     public LinkedList<Piece> pieces = new LinkedList<>();
+    public LinkedList<Move> pseudoLegalMoves = new LinkedList<>();
+    public static final int[] OFFSETS = {-1, -9, -8, -7, 1, 9, 8, 7};
 
     public Board(String fen) {
         Dimension boardSize = new Dimension(1000, 1000);
@@ -34,6 +36,59 @@ public class Board extends JLayeredPane {
         interpretFenString(fen);
 
         renderPiecesInitially();
+
+        // Generate every possible move
+        generatePseudoLegalMoves();
+    }
+
+    public void generatePseudoLegalMoves() {
+        pseudoLegalMoves.clear();
+        for(Piece piece : pieces) {
+            if(piece.getType() == 1) {
+                generateStraightSlidingMoves(piece);
+            }
+        }
+    }
+
+    private void generateStraightSlidingMoves(Piece piece) {
+        Square startSquare = (Square) getComponent(piece.positionIndex);
+        int[] numberOfSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
+
+        for(int directionIndex = 0; directionIndex <= 6; directionIndex += 2) {
+            int currentIndex = startSquare.getIndex();
+
+            for(int i = 0; i < numberOfSquaresToBorder[directionIndex]; i++) {
+                currentIndex += OFFSETS[directionIndex];
+                Square targetSquare = (Square) getComponent(currentIndex);
+
+                System.out.println(targetSquare.getIndex());
+
+                if(targetSquare.getPiece() == null) {
+                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                }
+                // Square is blocked by friendly piece
+                else if(targetSquare.getPiece().getColor() == piece.getColor()) {
+                    System.out.println("true");
+                    break;
+                }
+                // Square is blocked by enemy piece, attack enemy piece
+                else if(targetSquare.getPiece().getColor() != piece.getColor()) {
+                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    break;
+                }
+            }
+        }
+    }
+
+    public void displayMoves(Piece pieceToMove) {
+        // Display possible moves
+        Square square = (Square) pieceToMove.getParent();
+        square.removePiece();
+        for(Move move : pseudoLegalMoves) {
+            if(square.getIndex() == move.startSquare().getIndex()) {
+                move.targetSquare().setTargetSquare();
+            }
+        }
     }
 
     private void interpretFenString(String fen) {
@@ -55,8 +110,7 @@ public class Board extends JLayeredPane {
                 // Character resembles a piece
                 int type = fenToPiece.get(lowerCaseCharacter);
                 int color = Character.isUpperCase(character) ? 1 : 0;
-                Square square = (Square) getComponent(currentIndex);
-                square.addPiece(new Piece(currentIndex, type, color));
+                pieces.add(new Piece(currentIndex, type, color));
                 currentIndex++;
                 continue;
             }
