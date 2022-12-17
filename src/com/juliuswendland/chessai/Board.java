@@ -51,73 +51,64 @@ public class Board extends JLayeredPane {
                 generateKingMoves(piece);
             }
             else if(piece.getType() == 1) {
-                generateStraightSlidingMoves(piece);
-                generateDiagonalSlidingMoves(piece);
+                generateSlidingMoves(piece);
             }
             else if(piece.getType() == 2) {
-                generateDiagonalSlidingMoves(piece);
+                generateSlidingMoves(piece);
             }
             else if(piece.getType() == 3) {
                 generateKnightMoves(piece);
             }
             else if(piece.getType() == 4) {
-                generateStraightSlidingMoves(piece);
+                generateSlidingMoves(piece);
             }
         }
     }
 
-    private void generateStraightSlidingMoves(Piece piece) {
+    private void generateSlidingMoves(Piece piece) {
         Square startSquare = (Square) getComponent(piece.positionIndex);
-        int[] numberOfSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
+        int[] numberSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
 
-        for(int directionIndex = 0; directionIndex <= 6; directionIndex += 2) {
+        int startDirectionIndex;
+        int directionIndexIncrement;
+        // Piece is a bishop, move diagonally
+        if(piece.getType() == 2) {
+            startDirectionIndex = 1;
+            directionIndexIncrement = 2;
+        }
+        // Piece is rook, move in straight line
+        else if(piece.getType() == 4) {
+            startDirectionIndex = 0;
+            directionIndexIncrement = 2;
+        }
+        // Piece is a queen, move all directions
+        else {
+            startDirectionIndex = 0;
+            directionIndexIncrement = 1;
+        }
+
+        for(int directionIndex = startDirectionIndex; directionIndex <= 7; directionIndex += directionIndexIncrement) {
             int currentIndex = startSquare.getIndex();
 
-            for(int i = 0; i < numberOfSquaresToBorder[directionIndex]; i++) {
+            for(int i = 0; i < numberSquaresToBorder[directionIndex]; i++) {
                 currentIndex += OFFSETS[directionIndex];
                 Square targetSquare = (Square) getComponent(currentIndex);
 
                 if(targetSquare.getPiece() == null) {
                     pseudoLegalMoves.add(new Move(startSquare, targetSquare));
                 }
-                // Square is blocked by friendly piece
+                // Square is blocked by friendly piece, cant move there
                 else if(targetSquare.getPiece().getColor() == piece.getColor()) {
                     break;
                 }
-                // Square is blocked by enemy piece, attack enemy piece
+                // Square is blocked by enemy piece, attack that piece
                 else {
                     pseudoLegalMoves.add(new Move(startSquare, targetSquare));
                     break;
                 }
             }
         }
-    }
 
-    private void generateDiagonalSlidingMoves(Piece piece) {
-        Square startSquare = (Square) getComponent(piece.positionIndex);
-        int[] numberOfSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
-
-        for(int directionIndex = 1; directionIndex <= 7; directionIndex += 2) {
-            int currentIndex = startSquare.getIndex();
-
-            for(int i = 0; i < numberOfSquaresToBorder[directionIndex]; i++) {
-                currentIndex += OFFSETS[directionIndex];
-                Square targetSquare = (Square) getComponent(currentIndex);
-
-                if(targetSquare.getPiece() == null) {
-                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
-                }
-                // Square is blocked by friendly piece
-                else if(targetSquare.getPiece().getColor() == piece.getColor()) {
-                    break;
-                }
-                // Square is blocked by enemy piece, attack enemy piece
-                else {
-                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
-                    break;
-                }
-            }
-        }
     }
 
     private void generateKingMoves(Piece piece) {
