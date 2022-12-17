@@ -98,6 +98,12 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
             board.setCursor(null);
         }
 
+        // Check if move was double pawn push
+        Move move = board.getMove(startSquare, square);
+        if(move.moveFlag() == 1) {
+            pieceToMove.doubleMovePossible = false;
+        }
+
         // Reset all squares
         for(int i = 0; i < 64; i++) {
             Square squareToReset = (Square) board.getComponent(i);

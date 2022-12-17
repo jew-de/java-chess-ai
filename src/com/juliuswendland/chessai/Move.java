@@ -1,3 +1,3 @@
 package com.juliuswendland.chessai;
 
-public record Move(Square startSquare, Square targetSquare) {}
+public record Move(Square startSquare, Square targetSquare, int moveFlag) {}

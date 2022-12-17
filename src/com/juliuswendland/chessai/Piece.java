@@ -8,6 +8,7 @@ public class Piece extends JLabel {
     private final ImageIcon[][] icons = new ImageIcon[2][6];
     private int type;
     private final int color;
+    public boolean doubleMovePossible;
 
     public Piece(int positionIndex, int type, int color) {
         this.positionIndex = positionIndex;
@@ -19,6 +20,8 @@ public class Piece extends JLabel {
         setIcon(icons[color][type]);
         setHorizontalAlignment(0);
         setVerticalAlignment(0);
+
+        doubleMovePossible = type == 5;
     }
 
     private void loadIcons() {

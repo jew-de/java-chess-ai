@@ -97,7 +97,7 @@ public class Board extends JLayeredPane {
                 Square targetSquare = (Square) getComponent(currentIndex);
 
                 if(targetSquare.getPiece() == null) {
-                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                 }
                 // Square is blocked by friendly piece, cant move there
                 else if(targetSquare.getPiece().getColor() == piece.getColor()) {
@@ -105,7 +105,7 @@ public class Board extends JLayeredPane {
                 }
                 // Square is blocked by enemy piece, attack that piece
                 else {
-                    pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                    pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     break;
                 }
             }
@@ -122,13 +122,13 @@ public class Board extends JLayeredPane {
 
             Square targetSquare = (Square) getComponent(piece.positionIndex + OFFSETS[directionIndex]);
             if(targetSquare.getPiece() == null) {
-                pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
             }
             else if(targetSquare.getPiece().getColor() == piece.getColor()) {
                 continue;
             }
             else {
-                pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
             }
         }
     }
@@ -159,18 +159,18 @@ public class Board extends JLayeredPane {
                     Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[2]);
 
                     if (targetSquare.getPiece() == null) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     } else if (targetSquare.getPiece().getColor() != piece.getColor()) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     }
                 }
                 if (numberOfSquaresToBorder[6] > 0) {
                     Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[6]);
 
                     if (targetSquare.getPiece() == null) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     } else if (targetSquare.getPiece().getColor() != piece.getColor()) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     }
                 }
             }
@@ -180,18 +180,18 @@ public class Board extends JLayeredPane {
                     Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[0]);
 
                     if (targetSquare.getPiece() == null) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     } else if (targetSquare.getPiece().getColor() != piece.getColor()) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     }
                 }
                 if (numberOfSquaresToBorder[4] > 0) {
                     Square targetSquare = (Square) getComponent(currentIndex + OFFSETS[4]);
 
                     if (targetSquare.getPiece() == null) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     } else if (targetSquare.getPiece().getColor() != piece.getColor()) {
-                        pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                        pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
                     }
                 }
             }
@@ -212,7 +212,17 @@ public class Board extends JLayeredPane {
         Square targetSquare = (Square) getComponent(currentIndex);
 
         if(targetSquare.getPiece() == null) {
-            pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+            pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
+
+            // Check if double pawn push is possible, if so, generate double move
+            if(piece.doubleMovePossible) {
+                int doubleMoveSquareIndex = currentIndex + OFFSETS[directionIndex];
+                Square doubleMoveSquare = (Square) getComponent(doubleMoveSquareIndex);
+
+                if(targetSquare.getPiece() == null) {
+                    pseudoLegalMoves.add(new Move(startSquare, doubleMoveSquare, MoveFlags.DOUBLE_PAWN_PUSH));
+                }
+            }
         }
 
         // Check if there are any pieces to attack
@@ -222,7 +232,7 @@ public class Board extends JLayeredPane {
             int indexOfLeftSquare = currentIndex + OFFSETS[0];
             targetSquare = (Square) getComponent(indexOfLeftSquare);
             if(targetSquare.getPiece() != null && targetSquare.getPiece().getColor() != piece.getColor()) {
-                pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
             }
         }
 
@@ -230,10 +240,19 @@ public class Board extends JLayeredPane {
             int indexOfRightSquare = currentIndex + OFFSETS[4];
             targetSquare = (Square) getComponent(indexOfRightSquare);
             if(targetSquare.getPiece() != null && targetSquare.getPiece().getColor() != piece.getColor()) {
-                pseudoLegalMoves.add(new Move(startSquare, targetSquare));
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
             }
         }
 
+    }
+
+    public Move getMove(Square startSquare, Square targetSquare) {
+        for(Move move : pseudoLegalMoves) {
+            if(move.startSquare() == startSquare && move.targetSquare() == targetSquare) {
+                return move;
+            }
+        }
+        return null;
     }
 
     public void displayMoves(Piece pieceToMove) {
