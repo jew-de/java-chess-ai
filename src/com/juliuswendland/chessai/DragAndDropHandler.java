@@ -81,7 +81,9 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         Square square;
         if(componentAtMouse instanceof Piece piece) {
             square = (Square) componentAtMouse.getParent();
-            board.pieces.remove(piece);
+            if(piece.getColor() != pieceToMove.getColor()) {
+                board.pieces.remove(piece);
+            }
         } else {
             square = (Square) componentAtMouse;
         }
@@ -100,7 +102,7 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
 
         // Check if move was double pawn push
         Move move = board.getMove(startSquare, square);
-        if(move.moveFlag() == 1) {
+        if(move != null && move.moveFlag() == 1) {
             pieceToMove.doubleMovePossible = false;
         }
 

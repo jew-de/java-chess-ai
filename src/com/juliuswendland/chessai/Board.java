@@ -124,10 +124,7 @@ public class Board extends JLayeredPane {
             if(targetSquare.getPiece() == null) {
                 pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
             }
-            else if(targetSquare.getPiece().getColor() == piece.getColor()) {
-                continue;
-            }
-            else {
+            else if(targetSquare.getPiece().getColor() != piece.getColor()) {
                 pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
             }
         }
