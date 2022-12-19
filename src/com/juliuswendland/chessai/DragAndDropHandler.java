@@ -78,40 +78,46 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
 
         Component componentAtMouse = board.findComponentAt(x, y);
 
-        Square square;
-        if(componentAtMouse instanceof Piece piece) {
-            square = (Square) componentAtMouse.getParent();
-            if(piece.getColor() != pieceToMove.getColor()) {
-                board.pieces.remove(piece);
-            }
-        } else {
-            square = (Square) componentAtMouse;
+        board.setCursor(null);
+
+        Square targetSquare;
+        // Enemy piece on target square
+        if(componentAtMouse instanceof Piece) {
+            targetSquare = (Square) componentAtMouse.getParent();
+        }
+        // Target square is empty
+        else {
+            targetSquare = (Square) componentAtMouse;
         }
 
-        if(!square.isTargetSquare) {
-            // Reset piece back to original position
+        // Check if move was not listed as a possible move
+        // If so, return and reset piece to original position
+        if(!targetSquare.isTargetSquare) {
             startSquare.addPiece(pieceToMove);
             pieceToMove = null;
-        } else {
-            // Make the move
-            square.removePiece();
-            square.addPiece(pieceToMove);
-            pieceToMove.positionIndex = square.getIndex();
-            board.setCursor(null);
+            board.resetAllSquares();
+            return;
         }
 
+        // If there is a piece on the square, remove it
+        if(targetSquare.getPiece() != null) {
+            board.pieces.remove(targetSquare.getPiece());
+            targetSquare.removePiece();
+        }
+
+        // Add new piece to square
+        targetSquare.addPiece(pieceToMove);
+        pieceToMove.positionIndex = targetSquare.getIndex();
+
+        // Reset all squares
+        board.resetAllSquares();
+
         // Check if move was double pawn push
-        Move move = board.getMove(startSquare, square);
-        if(move != null && move.moveFlag() == 1) {
+        if(pieceToMove.getType() == 5) {
             pieceToMove.doubleMovePossible = false;
         }
 
-        // Reset all squares
-        for(int i = 0; i < 64; i++) {
-            Square squareToReset = (Square) board.getComponent(i);
-            squareToReset.reset();
-        }
-
+        // Generate possible moves for new position
         board.generatePseudoLegalMoves();
     }
 

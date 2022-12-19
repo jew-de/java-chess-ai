@@ -216,7 +216,7 @@ public class Board extends JLayeredPane {
                 int doubleMoveSquareIndex = currentIndex + OFFSETS[directionIndex];
                 Square doubleMoveSquare = (Square) getComponent(doubleMoveSquareIndex);
 
-                if(targetSquare.getPiece() == null) {
+                if(doubleMoveSquare.getPiece() == null) {
                     pseudoLegalMoves.add(new Move(startSquare, doubleMoveSquare, MoveFlags.DOUBLE_PAWN_PUSH));
                 }
             }
@@ -299,6 +299,13 @@ public class Board extends JLayeredPane {
         for(Piece piece : pieces) {
             Square square = (Square) getComponent(piece.positionIndex);
             square.addPiece(piece);
+        }
+    }
+
+    public void resetAllSquares() {
+        for(int i = 0; i < 64; i++) {
+            Square squareToReset = (Square) getComponent(i);
+            squareToReset.reset();
         }
     }
 }
