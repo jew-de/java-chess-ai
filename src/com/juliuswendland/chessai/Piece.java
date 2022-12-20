@@ -9,6 +9,7 @@ public class Piece extends JLabel {
     private int type;
     private final int color;
     public boolean doubleMovePossible;
+    public static final int KING = 0, QUEEN = 1, BISHOP = 2, KNIGHT = 3, ROOK = 4, PAWN = 5;
 
     public Piece(int positionIndex, int type, int color) {
         this.positionIndex = positionIndex;

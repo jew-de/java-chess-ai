@@ -69,6 +69,7 @@ public class Square extends JPanel {
             remove(this.piece);
         }
         this.piece = null;
+        repaint();
     }
 
     // Getters and setters

@@ -112,9 +112,26 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         // Reset all squares
         board.resetAllSquares();
 
-        // Check if move was double pawn push
-        if(pieceToMove.getType() == 5) {
+        // Check for special moves and pieces
+        if(pieceToMove.getType() == Piece.PAWN) {
             pieceToMove.doubleMovePossible = false;
+        }
+
+        Move moveDone = board.getMove(startSquare, targetSquare);
+        if(moveDone != null) {
+            if(moveDone.moveFlag() == MoveFlags.DOUBLE_PAWN_PUSH) {
+                // Generate en passant moves
+                board.generateEnPassantMoves(targetSquare);
+            } else if(moveDone.moveFlag() == MoveFlags.EN_PASSANT) {
+                // Handle the en passant move
+                // Find the square of the captured piece
+                int directionOfCapturedPiece = pieceToMove.getColor() == 0 ? 2 : 6;
+                int indexOfCaptureSquare = pieceToMove.positionIndex + Board.OFFSETS[directionOfCapturedPiece];
+                Square captureSquare = (Square) board.getComponent(indexOfCaptureSquare);
+                board.pieces.remove(captureSquare.getPiece());
+                System.out.println(captureSquare.getPiece());
+                captureSquare.removePiece();
+            }
         }
 
         // Generate possible moves for new position

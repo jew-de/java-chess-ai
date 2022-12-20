@@ -13,6 +13,7 @@ public class Board extends JLayeredPane {
     public static final Color LIGHT_COLOR_HIGHLIGHT = new Color(191, 82, 178);
     public LinkedList<Piece> pieces = new LinkedList<>();
     public LinkedList<Move> pseudoLegalMoves = new LinkedList<>();
+    public LinkedList<Move> enPassantMoves = new LinkedList<>();
     public static final int[] OFFSETS = {-1, -9, -8, -7, 1, 9, 8, 7};
 
     public Board(String fen) {
@@ -46,25 +47,31 @@ public class Board extends JLayeredPane {
     public void generatePseudoLegalMoves() {
         pseudoLegalMoves.clear();
 
+        // Generate moves for individual pieces
         for(Piece piece : pieces) {
-            if(piece.getType() == 0) {
+            if(piece.getType() == Piece.KING) {
                 generateKingMoves(piece);
             }
-            else if(piece.getType() == 1) {
+            else if(piece.getType() == Piece.QUEEN) {
                 generateSlidingMoves(piece);
             }
-            else if(piece.getType() == 2) {
+            else if(piece.getType() == Piece.BISHOP) {
                 generateSlidingMoves(piece);
             }
-            else if(piece.getType() == 3) {
+            else if(piece.getType() == Piece.KNIGHT) {
                 generateKnightMoves(piece);
             }
-            else if(piece.getType() == 4) {
+            else if(piece.getType() == Piece.ROOK) {
                 generateSlidingMoves(piece);
             } else {
                 generatePawnMoves(piece);
             }
         }
+
+        // Generate possible en passant moves
+        pseudoLegalMoves.addAll(enPassantMoves);
+        // En Passant moves must be done immediately
+        enPassantMoves.clear();
     }
 
     private void generateSlidingMoves(Piece piece) {
@@ -74,12 +81,12 @@ public class Board extends JLayeredPane {
         int startDirectionIndex;
         int directionIndexIncrement;
         // Piece is a bishop, move diagonally
-        if(piece.getType() == 2) {
+        if(piece.getType() == Piece.BISHOP) {
             startDirectionIndex = 1;
             directionIndexIncrement = 2;
         }
         // Piece is rook, move in straight line
-        else if(piece.getType() == 4) {
+        else if(piece.getType() == Piece.ROOK) {
             startDirectionIndex = 0;
             directionIndexIncrement = 2;
         }
@@ -110,7 +117,6 @@ public class Board extends JLayeredPane {
                 }
             }
         }
-
     }
 
     private void generateKingMoves(Piece piece) {
@@ -240,7 +246,31 @@ public class Board extends JLayeredPane {
                 pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
             }
         }
+    }
 
+    public void generateEnPassantMoves(Square targetSquareOfPrevMove) {
+        // Check if a piece is on the square to the left or right of the previous target square
+        int currentIndex = targetSquareOfPrevMove.getIndex();
+        int indexOfLeftSquare = currentIndex + OFFSETS[0];
+        int indexOfRightSquare = currentIndex + OFFSETS[4];
+        Square leftSquare = (Square) getComponent(indexOfLeftSquare);
+        Square rightSquare = (Square) getComponent(indexOfRightSquare);
+
+        // Calculate the target square of the en passant move
+        int directionOfTargetSquare = targetSquareOfPrevMove.getPiece().getColor() == 0 ? 2 : 6;
+        int indexOfTargetSquare = currentIndex + OFFSETS[directionOfTargetSquare];
+        Square targetSquare = (Square) getComponent(indexOfTargetSquare);
+
+        if(leftSquare.getPiece() != null && leftSquare.getPiece().getColor() != targetSquareOfPrevMove.getPiece().getColor()) {
+            if(leftSquare.getPiece().getType() == Piece.PAWN) {
+                enPassantMoves.add(new Move(leftSquare, targetSquare, MoveFlags.EN_PASSANT));
+            }
+        }
+        if(rightSquare.getPiece() != null && rightSquare.getPiece().getColor() != targetSquareOfPrevMove.getPiece().getColor()) {
+            if(rightSquare.getPiece().getType() == Piece.PAWN) {
+                enPassantMoves.add(new Move(rightSquare, targetSquare, MoveFlags.EN_PASSANT));
+            }
+        }
     }
 
     public Move getMove(Square startSquare, Square targetSquare) {
