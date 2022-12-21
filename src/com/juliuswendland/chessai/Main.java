@@ -9,6 +9,8 @@ public class Main {
     }
 
     public static void createAndShowUI() {
+        Resources.loadIcons();
+
         JFrame mainFrame = new JFrame();
         mainFrame.setTitle("Chess AI made by Julius Wendland");
         mainFrame.setVisible(true);

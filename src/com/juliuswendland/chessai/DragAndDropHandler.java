@@ -120,51 +120,7 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         board.resetAllSquares();
 
         // Check for special moves and pieces
-        if(pieceToMove.getType() == Piece.PAWN) {
-            pieceToMove.doubleMovePossible = false;
-        }
-
-        // Handle special moves
-        Move moveDone = board.getMove(startSquare, targetSquare);
-        if(moveDone != null) {
-            if(moveDone.moveFlag() == MoveFlags.DOUBLE_PAWN_PUSH) {
-                // Generate en passant moves
-                board.generateEnPassantMoves(targetSquare);
-            }
-            else if(moveDone.moveFlag() == MoveFlags.EN_PASSANT) {
-                // Handle the en passant move
-                // Find the square of the captured piece
-                int directionOfCapturedPiece = pieceToMove.getColor() == 0 ? 2 : 6;
-                int indexOfCaptureSquare = pieceToMove.positionIndex + Board.OFFSETS[directionOfCapturedPiece];
-                Square captureSquare = (Square) board.getComponent(indexOfCaptureSquare);
-                board.pieces.remove(captureSquare.getPiece());
-                System.out.println(captureSquare.getPiece());
-                captureSquare.removePiece();
-            }
-            else if(moveDone.moveFlag() == MoveFlags.CASTLE) {
-                // Handle castle
-                // Get left and right square of king
-                int indexOfLeftSquare = targetSquare.getIndex() + Board.OFFSETS[0];
-                int indexOfRightSquare = targetSquare.getIndex() + Board.OFFSETS[4];
-                Square leftSquare = (Square) board.getComponent(indexOfLeftSquare);
-                Square rightSquare = (Square) board.getComponent(indexOfRightSquare);
-
-                // Switch the piece of left and right square
-                Piece rook;
-                if(leftSquare.getPiece() != null) {
-                    rook = leftSquare.getPiece();
-                    leftSquare.removePiece();
-                    rightSquare.addPiece(rook);
-                    rook.positionIndex = rightSquare.getIndex();
-                } else {
-                    rook = rightSquare.getPiece();
-                    rightSquare.removePiece();
-                    leftSquare.addPiece(rook);
-                    rook.positionIndex = leftSquare.getIndex();
-                }
-                rook.hasMovesPreviously = true;
-            }
-        }
+        board.handleMove(pieceToMove, startSquare, targetSquare);
 
         // Generate possible moves for new position
         board.generatePseudoLegalMoves();

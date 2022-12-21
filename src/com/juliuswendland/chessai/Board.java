@@ -2,6 +2,7 @@ package com.juliuswendland.chessai;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -50,6 +51,8 @@ public class Board extends JLayeredPane {
 
         // Generate moves for individual pieces
         for(Piece piece : pieces) {
+            if(piece.getColor() != colorAtMove) continue;
+
             if(piece.getType() == Piece.KING) {
                 generateKingMoves(piece);
             }
@@ -211,6 +214,7 @@ public class Board extends JLayeredPane {
     private void generatePawnMoves(Piece piece) {
         Square startSquare = (Square) getComponent(piece.positionIndex);
         int[] numberSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
+        int moveFlag = MoveFlags.NONE;
 
         // If is black piece, move down, else move up
         int directionIndex = piece.getColor() == 0 ? 6 : 2;
@@ -221,14 +225,20 @@ public class Board extends JLayeredPane {
         currentIndex += OFFSETS[directionIndex];
         Square targetSquare = (Square) getComponent(currentIndex);
 
+        // Check if pawn can be transformed
+        if(targetSquare.getRank() == 0 || targetSquare.getRank() == 7) {
+            moveFlag = MoveFlags.TRANSFORM;
+        }
+
+        // Pawn must not be blocked by another piece
         if(targetSquare.getPiece() == null) {
-            pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
+            pseudoLegalMoves.add(new Move(startSquare, targetSquare, moveFlag));
 
             // Check if double pawn push is possible, if so, generate double move
             if(piece.doubleMovePossible) {
                 int doubleMoveSquareIndex = currentIndex + OFFSETS[directionIndex];
                 Square doubleMoveSquare = (Square) getComponent(doubleMoveSquareIndex);
-
+                // Pawn must not be blocked by another piece
                 if(doubleMoveSquare.getPiece() == null) {
                     pseudoLegalMoves.add(new Move(startSquare, doubleMoveSquare, MoveFlags.DOUBLE_PAWN_PUSH));
                 }
@@ -236,13 +246,14 @@ public class Board extends JLayeredPane {
         }
 
         // Check if there are any pieces to attack
+        // Pawn attacks diagonally in the direction it moves normally
         numberSquaresToBorder = targetSquare.getNumberOfSquaresToBorder();
 
         if (numberSquaresToBorder[0] > 0) {
             int indexOfLeftSquare = currentIndex + OFFSETS[0];
             targetSquare = (Square) getComponent(indexOfLeftSquare);
             if(targetSquare.getPiece() != null && targetSquare.getPiece().getColor() != piece.getColor()) {
-                pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare, moveFlag));
             }
         }
 
@@ -250,12 +261,13 @@ public class Board extends JLayeredPane {
             int indexOfRightSquare = currentIndex + OFFSETS[4];
             targetSquare = (Square) getComponent(indexOfRightSquare);
             if(targetSquare.getPiece() != null && targetSquare.getPiece().getColor() != piece.getColor()) {
-                pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.NONE));
+                pseudoLegalMoves.add(new Move(startSquare, targetSquare, moveFlag));
             }
         }
     }
 
     public void generateEnPassantMoves(Square targetSquareOfPrevMove) {
+        // Generate possible En Passant moves after a double pawn push
         // Check if a piece is on the square to the left or right of the previous target square
         int currentIndex = targetSquareOfPrevMove.getIndex();
         int indexOfLeftSquare = currentIndex + OFFSETS[0];
@@ -348,6 +360,89 @@ public class Board extends JLayeredPane {
             }
         }
         return null;
+    }
+
+    public void handleMove(Piece pieceMoved, Square startSquare, Square targetSquare) {
+        // Handle special pieces
+        if(pieceMoved.getType() == Piece.PAWN) {
+            pieceMoved.doubleMovePossible = false;
+        }
+
+        // Handle special moves
+        Move moveDone = getMove(startSquare, targetSquare);
+        if(moveDone != null) {
+            if(moveDone.moveFlag() == MoveFlags.DOUBLE_PAWN_PUSH) {
+                // Generate en passant moves
+                generateEnPassantMoves(targetSquare);
+            }
+            else if(moveDone.moveFlag() == MoveFlags.EN_PASSANT) {
+                // Handle the en passant move
+                // Find the square of the captured piece
+                int directionOfCapturedPiece = pieceMoved.getColor() == 0 ? 2 : 6;
+                int indexOfCaptureSquare = pieceMoved.positionIndex + Board.OFFSETS[directionOfCapturedPiece];
+                Square captureSquare = (Square) getComponent(indexOfCaptureSquare);
+                pieces.remove(captureSquare.getPiece());
+                System.out.println(captureSquare.getPiece());
+                captureSquare.removePiece();
+            }
+            else if(moveDone.moveFlag() == MoveFlags.CASTLE) {
+                // Handle castle
+                // Get left and right square of king
+                int indexOfLeftSquare = targetSquare.getIndex() + Board.OFFSETS[0];
+                int indexOfRightSquare = targetSquare.getIndex() + Board.OFFSETS[4];
+                Square leftSquare = (Square) getComponent(indexOfLeftSquare);
+                Square rightSquare = (Square) getComponent(indexOfRightSquare);
+
+                // Switch the piece of left and right square
+                Piece rook;
+                if(leftSquare.getPiece() != null) {
+                    rook = leftSquare.getPiece();
+                    leftSquare.removePiece();
+                    rightSquare.addPiece(rook);
+                    rook.positionIndex = rightSquare.getIndex();
+                } else {
+                    rook = rightSquare.getPiece();
+                    rightSquare.removePiece();
+                    leftSquare.addPiece(rook);
+                    rook.positionIndex = leftSquare.getIndex();
+                }
+                rook.hasMovesPreviously = true;
+            }
+            else if(moveDone.moveFlag() == MoveFlags.TRANSFORM) {
+                // Handle transform
+                Object typeOfNewPiece = createTransformDialog(pieceMoved.getColor());
+                if(typeOfNewPiece == null) {
+                    typeOfNewPiece = createTransformDialog(pieceMoved.getColor());
+                }
+                pieceMoved.transformInto((int) typeOfNewPiece);
+            }
+        }
+    }
+
+    private Object createTransformDialog(int color) {
+        Container parent = getParent();
+        JOptionPane transformPane = new JOptionPane();
+        transformPane.setMessage("Select which piece you want to turn your pawn into.");
+        transformPane.setMessageType(JOptionPane.INFORMATION_MESSAGE);
+
+        JButton queenButton = createTransformDialogButton(transformPane, Piece.QUEEN, color);
+        JButton knightButton = createTransformDialogButton(transformPane, Piece.KNIGHT, color);
+        JButton rookButton = createTransformDialogButton(transformPane, Piece.ROOK, color);
+        JButton bishopButton = createTransformDialogButton(transformPane, Piece.BISHOP, color);
+        Object[] options = new Object[] {queenButton, knightButton, rookButton, bishopButton};
+
+        transformPane.setOptions(options);
+        JDialog transformDialog = transformPane.createDialog(parent, "Pawn Transformation");
+        transformDialog.setVisible(true);
+
+        return transformPane.getValue();
+    }
+
+    private JButton createTransformDialogButton(JOptionPane parent, int type, int color) {
+        JButton button = new JButton(Resources.ICONS[color][type]);
+        ActionListener buttonListener = e -> parent.setValue(type);
+        button.addActionListener(buttonListener);
+        return button;
     }
 
     public void displayMoves(Piece pieceToMove) {

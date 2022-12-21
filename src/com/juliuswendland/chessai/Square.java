@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class Square extends JPanel {
-    private final int index;
+    private final int index, rank;
     private Piece piece = null;
     private final int[] numberOfSquaresToBorder = new int[8];
     Color squareColor;
@@ -13,6 +13,7 @@ public class Square extends JPanel {
     public Square(Color squareColor, int rank, int file) {
         this.index = (rank * 8) + file;
         this.squareColor = squareColor;
+        this.rank = rank;
 
         setLayout(new BorderLayout());
         setBackground(squareColor);
@@ -75,6 +76,10 @@ public class Square extends JPanel {
     // Getters and setters
     public int getIndex() {
         return index;
+    }
+
+    public int getRank() {
+        return rank;
     }
 
     public int[] getNumberOfSquaresToBorder() {
