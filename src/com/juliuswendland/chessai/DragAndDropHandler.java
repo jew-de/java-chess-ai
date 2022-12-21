@@ -27,9 +27,14 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
 
         // Keep relative position of piece to mouse
         Point parentLocation = componentAtMouse.getParent().getLocation();
+        pieceToMove = (Piece) componentAtMouse;
+        if(pieceToMove.getColor() != board.colorAtMove) {
+            pieceToMove = null;
+            return;
+        }
+
         xAdjustment = parentLocation.x - e.getX();
         yAdjustment = parentLocation.y - e.getY();
-        pieceToMove = (Piece) componentAtMouse;
 
         board.displayMoves(pieceToMove);
         startSquare = (Square) board.getComponent(pieceToMove.positionIndex);
@@ -108,6 +113,8 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         // Add new piece to square
         targetSquare.addPiece(pieceToMove);
         pieceToMove.positionIndex = targetSquare.getIndex();
+        pieceToMove.hasMovesPreviously = true;
+        board.colorAtMove = board.colorAtMove == 1 ? 0 : 1;
 
         // Reset all squares
         board.resetAllSquares();
@@ -117,12 +124,14 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
             pieceToMove.doubleMovePossible = false;
         }
 
+        // Handle special moves
         Move moveDone = board.getMove(startSquare, targetSquare);
         if(moveDone != null) {
             if(moveDone.moveFlag() == MoveFlags.DOUBLE_PAWN_PUSH) {
                 // Generate en passant moves
                 board.generateEnPassantMoves(targetSquare);
-            } else if(moveDone.moveFlag() == MoveFlags.EN_PASSANT) {
+            }
+            else if(moveDone.moveFlag() == MoveFlags.EN_PASSANT) {
                 // Handle the en passant move
                 // Find the square of the captured piece
                 int directionOfCapturedPiece = pieceToMove.getColor() == 0 ? 2 : 6;
@@ -131,6 +140,29 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
                 board.pieces.remove(captureSquare.getPiece());
                 System.out.println(captureSquare.getPiece());
                 captureSquare.removePiece();
+            }
+            else if(moveDone.moveFlag() == MoveFlags.CASTLE) {
+                // Handle castle
+                // Get left and right square of king
+                int indexOfLeftSquare = targetSquare.getIndex() + Board.OFFSETS[0];
+                int indexOfRightSquare = targetSquare.getIndex() + Board.OFFSETS[4];
+                Square leftSquare = (Square) board.getComponent(indexOfLeftSquare);
+                Square rightSquare = (Square) board.getComponent(indexOfRightSquare);
+
+                // Switch the piece of left and right square
+                Piece rook;
+                if(leftSquare.getPiece() != null) {
+                    rook = leftSquare.getPiece();
+                    leftSquare.removePiece();
+                    rightSquare.addPiece(rook);
+                    rook.positionIndex = rightSquare.getIndex();
+                } else {
+                    rook = rightSquare.getPiece();
+                    rightSquare.removePiece();
+                    leftSquare.addPiece(rook);
+                    rook.positionIndex = leftSquare.getIndex();
+                }
+                rook.hasMovesPreviously = true;
             }
         }
 

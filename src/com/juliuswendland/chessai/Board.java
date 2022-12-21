@@ -15,6 +15,7 @@ public class Board extends JLayeredPane {
     public LinkedList<Move> pseudoLegalMoves = new LinkedList<>();
     public LinkedList<Move> enPassantMoves = new LinkedList<>();
     public static final int[] OFFSETS = {-1, -9, -8, -7, 1, 9, 8, 7};
+    public int colorAtMove = 1;
 
     public Board(String fen) {
         Dimension boardSize = new Dimension(1000, 1000);
@@ -72,6 +73,12 @@ public class Board extends JLayeredPane {
         pseudoLegalMoves.addAll(enPassantMoves);
         // En Passant moves must be done immediately
         enPassantMoves.clear();
+
+        // Generate possible castle moves
+        for(Piece piece : pieces) {
+            if(piece.getType() != Piece.KING) continue;
+            generateCastleMoves(piece);
+        }
     }
 
     private void generateSlidingMoves(Piece piece) {
@@ -271,6 +278,67 @@ public class Board extends JLayeredPane {
                 enPassantMoves.add(new Move(rightSquare, targetSquare, MoveFlags.EN_PASSANT));
             }
         }
+    }
+
+    private void generateCastleMoves(Piece piece) {
+        // King must not have moved
+        if(piece.hasMovesPreviously) return;
+        // King must not be in check
+        for(Move move : pseudoLegalMoves) {
+            if(move.targetSquare().getIndex() == piece.positionIndex) return;
+        }
+
+        Square startSquare = (Square) getComponent(piece.positionIndex);
+        int[] numberSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
+
+        // Check if castling is possible for each side
+        int currentIndex;
+        Square targetSquare  = null;
+        boolean pathIsClear;
+
+        for(int directionIndex = 0; directionIndex <= 4; directionIndex += 4) {
+            currentIndex = startSquare.getIndex();
+
+            // Check if path to rook is clear
+            pathIsClear = false;
+            for(int i = 0; i < numberSquaresToBorder[directionIndex] - 1; i++) {
+                currentIndex += OFFSETS[directionIndex];
+
+                targetSquare = (Square) getComponent(currentIndex);
+                // Path must not be blocked by any pieces
+                if(targetSquare.getPiece() != null) break;
+                // Squares in the path must not be attacked by any enemy piece
+                if(checkIfSquareIsAttacked(targetSquare, piece.getColor())) break;
+
+                pathIsClear = true;
+            }
+
+            // Path must be clear
+            if(!pathIsClear) continue;
+
+            int targetSquareIndex = currentIndex + OFFSETS[directionIndex];
+            Square rookSquare = (Square) getComponent(targetSquareIndex);
+            // Target square must have piece on it
+            if(rookSquare.getPiece() == null) continue;
+            // Piece on target square must be a rook
+            if(rookSquare.getPiece().getType() != Piece.ROOK) continue;
+            // Rook must not have moved in this game
+            if(rookSquare.getPiece().hasMovesPreviously) continue;
+
+            pseudoLegalMoves.add(new Move(startSquare, targetSquare, MoveFlags.CASTLE));
+        }
+    }
+
+    private boolean checkIfSquareIsAttacked(Square square, int friendlyColor) {
+        // Check if given square is under attack by enemy piece
+        for(Move move : pseudoLegalMoves) {
+            if(move.targetSquare() == square) {
+                if(move.startSquare().getPiece().getColor() != friendlyColor) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public Move getMove(Square startSquare, Square targetSquare) {
