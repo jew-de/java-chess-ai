@@ -114,16 +114,16 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         targetSquare.addPiece(pieceToMove);
         pieceToMove.positionIndex = targetSquare.getIndex();
         pieceToMove.hasMovesPreviously = true;
-        board.colorAtMove = board.colorAtMove == 1 ? 0 : 1;
+        board.colorAtMove = board.colorAtMove == Piece.WHITE ? Piece.DARK : Piece.WHITE;
 
         // Reset all squares
         board.resetAllSquares();
 
         // Check for special moves and pieces
-        board.handleMove(pieceToMove, startSquare, targetSquare);
+        board.moveGenerator.handleMove(pieceToMove, startSquare, targetSquare);
 
         // Generate possible moves for new position
-        board.generatePseudoLegalMoves();
+        board.legalMoves = board.moveGenerator.generateLegalMoves();
     }
 
     @Override

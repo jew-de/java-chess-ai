@@ -9,6 +9,7 @@ public class Piece extends JLabel {
     public boolean doubleMovePossible;
     public boolean hasMovesPreviously = false;
     public static final int KING = 0, QUEEN = 1, BISHOP = 2, KNIGHT = 3, ROOK = 4, PAWN = 5;
+    public static final int WHITE = 1, DARK = 0;
 
     public Piece(int positionIndex, int type, int color) {
         this.positionIndex = positionIndex;
@@ -19,6 +20,8 @@ public class Piece extends JLabel {
         setIcon(Resources.ICONS[color][type]);
         setHorizontalAlignment(0);
         setVerticalAlignment(0);
+        repaint();
+        revalidate();
 
         doubleMovePossible = type == 5;
     }
@@ -26,6 +29,10 @@ public class Piece extends JLabel {
     public void transformInto(int type) {
         this.type = type;
         setIcon(Resources.ICONS[color][type]);
+    }
+
+    public boolean isSlidingPiece() {
+        return type == Piece.QUEEN || type == Piece.BISHOP || type == Piece.ROOK;
     }
 
     // Getters and setters

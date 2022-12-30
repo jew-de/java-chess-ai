@@ -23,18 +23,6 @@ public class Square extends JPanel {
     }
 
     private void calculateNumberOfSquaresToBorder(int rank, int file) {
-        /*
-         * DIRECTIONS:
-         * 0 - left
-         * 1 - top left
-         * 2 - up
-         * 3 - top right
-         * 4 - right
-         * 5 - bottom right
-         * 6 - down
-         * 7 - bottom left
-         */
-
         numberOfSquaresToBorder[0] = file;
         numberOfSquaresToBorder[2] = rank;
         numberOfSquaresToBorder[4] = 7 - file;
@@ -63,6 +51,7 @@ public class Square extends JPanel {
     public void addPiece(Piece piece) {
         this.piece = piece;
         add(this.piece);
+        repaint();
     }
 
     public void removePiece() {
