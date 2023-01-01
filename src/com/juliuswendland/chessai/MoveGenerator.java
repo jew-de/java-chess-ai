@@ -153,10 +153,12 @@ public class MoveGenerator {
         Piece pinnedPiece; // A piece that may be pinned by another piece
 
         // Generate moves for vertically / horizontally pinned pieces
-        for(int directionIndex = Directions.LEFT; directionIndex <= Directions.BOTTOM; directionIndex += 2) {
+        for(int directionIndex = Directions.LEFT; directionIndex <= Directions.BOTTOM_LEFT; directionIndex++) {
             // Go in every direction from friendly king until border is reached
             pinnedPiece = null;
             index = friendlyKing.positionIndex;
+            boolean isDiagonal = directionIndex % 2 == 1;
+            int specificPieceType = isDiagonal ? Piece.BISHOP : Piece.ROOK;
 
             for(int i = 0; i < numberSquaresToBorder[directionIndex]; i++) {
                 index += Board.OFFSETS[directionIndex];
@@ -176,11 +178,11 @@ public class MoveGenerator {
                 if(!piece.isSlidingPiece()) break;
 
                 // Piece can only be pinned by queens or Rooks
-                if(piece.getType() != Piece.QUEEN && piece.getType() != Piece.ROOK) break;
+                if(piece.getType() != Piece.QUEEN && piece.getType() != specificPieceType) break;
                 Square pinnedPieceSquare = (Square) board.getComponent(pinnedPiece.positionIndex);
                 Square squareOfPinningPiece = (Square) board.getComponent(piece.positionIndex);
 
-                if(pinnedPiece.getType() == Piece.QUEEN || pinnedPiece.getType() == Piece.ROOK) {
+                if(pinnedPiece.getType() == Piece.QUEEN || pinnedPiece.getType() == specificPieceType) {
                     // Piece can only move along the diagonal line
                     for(Square moveSquare : board.getSquaresBetweenTwoPieces(piece, friendlyKing)) {
                         if(pinnedPieceSquare == moveSquare) continue;
@@ -192,74 +194,19 @@ public class MoveGenerator {
 
                 else if(pinnedPiece.getType() == Piece.PAWN) {
                     // Pawn can only capture the pinning piece if next to it
-                    int allowedDirection = pinnedPiece.getColor() == Piece.WHITE ? Directions.TOP : Directions.BOTTOM;
-
-                    if(directionIndex == allowedDirection) {
-                        int indexOfSquareAttackedByPawn = pinnedPiece.positionIndex + Board.OFFSETS[directionIndex];
-                        Square squareAttackedByPawn = (Square) board.getComponent(indexOfSquareAttackedByPawn);
-
-                        if(squareAttackedByPawn == pinnedPieceSquare) {
-                            moves.add(new Move(pinnedPieceSquare, squareOfPinningPiece, MoveFlags.NONE));
-                        }
+                    int[] allowedDirections;
+                    if(isDiagonal) {
+                        allowedDirections = pinnedPiece.getColor() == Piece.WHITE ? new int[]{1, 3} : new int[]{5, 7};
+                    } else {
+                        allowedDirections = new int[]{pinnedPiece.getColor() == Piece.WHITE ? Directions.TOP : Directions.BOTTOM};
                     }
-                }
-
-                // Remove the pinned piece from the rest of move generation
-                // Filter is necessary to remove the specific piece, not just one random piece
-                Piece finalPinnedPiece = pinnedPiece;
-                friendlyPieces.removeIf(e -> e.positionIndex == finalPinnedPiece.positionIndex);
-            }
-        }
-
-        // Generate moves for diagonally pinned pieces
-        for(int directionIndex = Directions.TOP_LEFT; directionIndex <= Directions.BOTTOM_LEFT; directionIndex += 2) {
-            // Go in every direction from friendly king until border is reached
-            pinnedPiece = null;
-            index = friendlyKing.positionIndex;
-
-            for(int i = 0; i < numberSquaresToBorder[directionIndex]; i++) {
-                index += Board.OFFSETS[directionIndex];
-                Square square = (Square) board.getComponent(index);
-                Piece piece = square.getPiece();
-
-                if(piece == null) continue;
-                if(piece.getColor() == friendlyKing.getColor()) {
-                    // Two friendly pieces in this direction, piece is not pinned
-                    if(pinnedPiece != null) break;
-                    // This piece may be pinned
-                    pinnedPiece = piece;
-                    continue;
-                }
-
-                if(pinnedPiece == null) break;
-                if(!piece.isSlidingPiece()) break;
-
-                // Piece can only be pinned by queens or bishops
-                if(piece.getType() != Piece.QUEEN && piece.getType() != Piece.BISHOP) break;
-                Square pinnedPieceSquare = (Square) board.getComponent(pinnedPiece.positionIndex);
-                Square squareOfPinningPiece = (Square) board.getComponent(piece.positionIndex);
-
-                if(pinnedPiece.getType() == Piece.QUEEN || pinnedPiece.getType() == Piece.BISHOP) {
-                    // Piece can only move along the diagonal line
-                    for(Square moveSquare : board.getSquaresBetweenTwoPieces(piece, friendlyKing)) {
-                        if(pinnedPieceSquare == moveSquare) continue;
-                        moves.add(new Move(pinnedPieceSquare, moveSquare, MoveFlags.NONE));
-                    }
-                    // Piece can also capture the pinning piece
-                    moves.add(new Move(pinnedPieceSquare, squareOfPinningPiece, MoveFlags.NONE));
-                }
-
-                else if(pinnedPiece.getType() == Piece.PAWN) {
-                    // Pawn can only capture the pinning piece if next to it
-                    int[] allowedDirections = pinnedPiece.getColor() == Piece.WHITE ? new int[]{1, 3} : new int[]{5, 7};
 
                     int finalDirectionIndex = directionIndex;
-
-                    if(Arrays.stream(allowedDirections).anyMatch(e -> e == finalDirectionIndex)) {
+                    if(Arrays.stream(allowedDirections).anyMatch(direction -> direction == finalDirectionIndex)) {
                         int indexOfSquareAttackedByPawn = pinnedPiece.positionIndex + Board.OFFSETS[directionIndex];
                         Square squareAttackedByPawn = (Square) board.getComponent(indexOfSquareAttackedByPawn);
 
-                        if(squareAttackedByPawn == pinnedPieceSquare) {
+                        if(squareAttackedByPawn == squareOfPinningPiece) {
                             moves.add(new Move(pinnedPieceSquare, squareOfPinningPiece, MoveFlags.NONE));
                         }
                     }
@@ -308,6 +255,7 @@ public class MoveGenerator {
             Piece king = null;
             Piece attacker = null;
 
+            // Go left and right from one of the pawns
             for(int directionIndex = Directions.LEFT; directionIndex <= Directions.RIGHT; directionIndex += 4) {
                 int index = move.startSquare().getIndex();
                 for(int i = 0; i < numberSquaresToBorder[directionIndex]; i++) {
@@ -317,10 +265,12 @@ public class MoveGenerator {
 
                     if(square.getPiece() == null) continue;
 
+                    // Friendly king must be on one side of the pawns
                     if(piece.getType() == Piece.KING && piece.getColor() == movingPiece.getColor()) {
                         king = piece;
                     }
 
+                    // Attacking piece (horizontal slider) must be on the other side
                     if(piece.getColor() == movingPiece.getColor()) break;
                     if(piece.getType() == Piece.QUEEN || piece.getType() == Piece.ROOK) break;
                     attacker = piece;
@@ -331,6 +281,7 @@ public class MoveGenerator {
             move.startSquare().addPiece(movingPiece);
             squareOfCapturedPiece.addPiece(pieceCaptured);
 
+            // King would be in check, this move is illegal
             if(king != null || attacker != null) continue;
             legalMoves.add(move);
         }
