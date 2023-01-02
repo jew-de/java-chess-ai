@@ -146,6 +146,7 @@ public class MoveGenerator {
 
     private LinkedList<Move> generateMovesForPinnedPieces(Piece friendlyKing, LinkedList<Piece> friendlyPieces) {
         LinkedList<Move> moves = new LinkedList<>();
+        LinkedList<Square> squaresToMoveTo = new LinkedList<>();
 
         Square friendlyKingSquare = (Square) board.getComponent(friendlyKing.positionIndex);
         int[] numberSquaresToBorder = friendlyKingSquare.getNumberOfSquaresToBorder();
@@ -159,11 +160,13 @@ public class MoveGenerator {
             index = friendlyKing.positionIndex;
             boolean isDiagonal = directionIndex % 2 == 1;
             int specificPieceType = isDiagonal ? Piece.BISHOP : Piece.ROOK;
+            squaresToMoveTo.clear();
 
             for(int i = 0; i < numberSquaresToBorder[directionIndex]; i++) {
                 index += Board.OFFSETS[directionIndex];
                 Square square = (Square) board.getComponent(index);
                 Piece piece = square.getPiece();
+                squaresToMoveTo.add(square);
 
                 if(piece == null) continue;
                 if(piece.getColor() == friendlyKing.getColor()) {
@@ -184,14 +187,11 @@ public class MoveGenerator {
 
                 if(pinnedPiece.getType() == Piece.QUEEN || pinnedPiece.getType() == specificPieceType) {
                     // Piece can only move along the diagonal line
-                    for(Square moveSquare : board.getSquaresBetweenTwoPieces(piece, friendlyKing)) {
-                        if(pinnedPieceSquare == moveSquare) continue;
-                        moves.add(new Move(pinnedPieceSquare, moveSquare, MoveFlags.NONE));
+                    for(Square squareToMoveTo : squaresToMoveTo) {
+                        if(squareToMoveTo == pinnedPieceSquare) continue;
+                        moves.add(new Move(pinnedPieceSquare, squareToMoveTo, MoveFlags.NONE));
                     }
-                    // Piece can also capture the pinning piece
-                    moves.add(new Move(pinnedPieceSquare, squareOfPinningPiece, MoveFlags.NONE));
                 }
-
                 else if(pinnedPiece.getType() == Piece.PAWN) {
                     // Pawn can only capture the pinning piece if next to it
                     int[] allowedDirections;
@@ -213,7 +213,7 @@ public class MoveGenerator {
                 }
 
                 // Remove the pinned piece from the rest of move generation
-                // Filter is necessary to remove the specific piece, not just one random piece
+                // Filter is necessary to remove the specific piece, not just the first occurring piece of the same type
                 Piece finalPinnedPiece = pinnedPiece;
                 friendlyPieces.removeIf(e -> e.positionIndex == finalPinnedPiece.positionIndex);
             }
@@ -486,12 +486,14 @@ public class MoveGenerator {
 
                 if(secondStepSquare.getPiece() == null) {
                     squares.add(secondStepSquare);
-                } else if(secondStepSquare.getPiece().getColor() == piece.getColor()) {
+                }
+                else if(secondStepSquare.getPiece().getColor() == piece.getColor()) {
                     // King cannot capture this piece as he would end up in check
                     if(kingDangerSquares) {
                         squares.add(secondStepSquare);
                     }
-                } else {
+                }
+                else {
                     squares.add(secondStepSquare);
                 }
             }
@@ -536,56 +538,51 @@ public class MoveGenerator {
         }
     }
 
-    public void handleMove(Piece pieceMoved, Square startSquare, Square targetSquare) {
+    public void handleMove(Piece pieceMoved, Move moveDone) {
         // Handle special pieces
         pieceMoved.doubleMovePossible = false;
 
         // Handle special moves
-        Move moveDone = board.getMove(startSquare, targetSquare);
         if(moveDone == null) return;
+        int rookSquareIndex;
+        int newRookSquareIndex;
 
         switch (moveDone.moveFlag()) {
-            case MoveFlags.DOUBLE_PAWN_PUSH:
-                // Generate en passant moves
-                board.enPassantMoves = generateEnPassantMoves(targetSquare);
-                break;
-            case MoveFlags.EN_PASSANT:
+            case MoveFlags.DOUBLE_PAWN_PUSH -> board.enPassantMoves = generateEnPassantMoves(moveDone.targetSquare());
+            case MoveFlags.EN_PASSANT -> {
                 // Handle the en passant move
                 // Find the square of the captured piece
-                int directionOfCapturedPiece = pieceMoved.getColor() == 0 ? 2 : 6;
+                int directionOfCapturedPiece = pieceMoved.getColor() == Piece.DARK ? Directions.TOP : Directions.BOTTOM;
                 int indexOfCaptureSquare = pieceMoved.positionIndex + Board.OFFSETS[directionOfCapturedPiece];
                 Square captureSquare = (Square) board.getComponent(indexOfCaptureSquare);
                 board.pieces.remove(captureSquare.getPiece());
                 captureSquare.removePiece();
-                break;
-            case MoveFlags.CASTLE_KING_SIDE:
-                int rookSquareIndex = moveDone.targetSquare().getIndex() + Board.OFFSETS[Directions.RIGHT];
-                int newRookSquareIndex = moveDone.targetSquare().getIndex() + Board.OFFSETS[Directions.LEFT];
-                Square rookSquare = (Square) board.getComponent(rookSquareIndex);
-                Square newRookSquare = (Square) board.getComponent(newRookSquareIndex);
-                Piece rook = rookSquare.getPiece();
-                rookSquare.removePiece();
-                newRookSquare.addPiece(rook);
-                rook.positionIndex = newRookSquare.getIndex();
-                break;
-            case MoveFlags.CASTLE_QUEEN_SIDE:
+            }
+            // No checks necessary since the move is only added when possible
+            case MoveFlags.CASTLE_KING_SIDE -> {
+                // Move the king side rook next to the other side of the king to complete the castle
+                rookSquareIndex = moveDone.targetSquare().getIndex() + Board.OFFSETS[Directions.RIGHT];
+                newRookSquareIndex = moveDone.targetSquare().getIndex() + Board.OFFSETS[Directions.LEFT];
+                completeCastleMove(rookSquareIndex, newRookSquareIndex);
+            }
+            case MoveFlags.CASTLE_QUEEN_SIDE -> {
+                // Move the queen side rook next to the other side of the king to complete the castle
                 rookSquareIndex = moveDone.targetSquare().getIndex() + (Board.OFFSETS[Directions.LEFT] * 2);
                 newRookSquareIndex = moveDone.targetSquare().getIndex() + Board.OFFSETS[Directions.RIGHT];
-                rookSquare = (Square) board.getComponent(rookSquareIndex);
-                newRookSquare = (Square) board.getComponent(newRookSquareIndex);
-                rook = rookSquare.getPiece();
-                rookSquare.removePiece();
-                newRookSquare.addPiece(rook);
-                rook.positionIndex = newRookSquare.getIndex();
-                break;
-            case MoveFlags.TRANSFORM:
-                // Handle transform
-                Object typeOfNewPiece = board.createTransformDialog(pieceMoved.getColor());
-                if (typeOfNewPiece == null) {
-                    typeOfNewPiece = board.createTransformDialog(pieceMoved.getColor());
-                }
-                pieceMoved.transformInto((int) typeOfNewPiece);
-                break;
+                completeCastleMove(rookSquareIndex, newRookSquareIndex);
+            }
+            default -> {
+            }
+            // Promotion moves are handled here since there is four types of promotion moves
         }
+    }
+
+    private void completeCastleMove(int rookSquareIndex, int newRookSquareIndex) {
+        Square rookSquare = (Square) board.getComponent(rookSquareIndex);
+        Square newRookSquare = (Square) board.getComponent(newRookSquareIndex);
+        Piece rook = rookSquare.getPiece();
+        rookSquare.removePiece();
+        newRookSquare.addPiece(rook);
+        rook.positionIndex = newRookSquare.getIndex();
     }
 }

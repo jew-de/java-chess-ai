@@ -120,7 +120,8 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         board.resetAllSquares();
 
         // Check for special moves and pieces
-        board.moveGenerator.handleMove(pieceToMove, startSquare, targetSquare);
+        Move moveDone = board.getMove(startSquare, targetSquare);
+        board.moveGenerator.handleMove(pieceToMove, moveDone);
 
         // Generate possible moves for new position
         board.legalMoves = board.moveGenerator.generateLegalMoves();
