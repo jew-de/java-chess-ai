@@ -99,6 +99,7 @@ public class MoveGenerator {
                 // Generate promotion moves
                 if(piece.getType() == Piece.PAWN) {
                     if(square.getRank() == 7 || square.getRank() == 0) {
+                        // If the AI promotes there have to be separate moves for evaluation to function properly
                         if(piece.getColor() == Piece.WHITE) {
                             legalMoves.add(new Move(startSquare, square, MoveFlags.PROMOTE_PLAYER));
                         }
@@ -589,7 +590,13 @@ public class MoveGenerator {
                 completeCastleMove(rookSquareIndex, newRookSquareIndex);
             }
             case MoveFlags.PROMOTE_PLAYER -> {
-                int type = (int) board.createTransformDialog(pieceMoved.getColor());
+                Object returnValue = board.createTransformDialog(pieceMoved.getColor());
+                int type;
+                if(returnValue == null) {
+                    type = Piece.QUEEN;
+                } else {
+                    type = (int) board.createTransformDialog(pieceMoved.getColor());
+                }
                 pieceMoved.transformInto(type);
             }
             // AI Promotion moves are handled here since there is four types of promotion moves
