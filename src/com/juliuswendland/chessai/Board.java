@@ -84,7 +84,7 @@ public class Board extends JLayeredPane {
     public Object createTransformDialog(int color) {
         Container parent = getParent();
         JOptionPane transformPane = new JOptionPane();
-        transformPane.setMessage("Select which piece you want to turn your pawn into.");
+        transformPane.setMessage("Select which piece you want to promote your pawn to.");
         transformPane.setMessageType(JOptionPane.INFORMATION_MESSAGE);
 
         JButton queenButton = createTransformDialogButton(transformPane, Piece.QUEEN, color);
@@ -146,7 +146,6 @@ public class Board extends JLayeredPane {
             // Character is a slash
             if(numberOfSquares == -1) continue;
             currentIndex += numberOfSquares;
-
         }
     }
 

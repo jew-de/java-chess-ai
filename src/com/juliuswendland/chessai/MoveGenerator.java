@@ -94,9 +94,25 @@ public class MoveGenerator {
 
             for(Square square : squares) {
                 Square startSquare = (Square) board.getComponent(piece.positionIndex);
-                if(pushMask.contains(square) || captureMask.contains(square.getPiece())) {
-                    legalMoves.add(new Move(startSquare, square, MoveFlags.NONE));
+                if(!pushMask.contains(square) && !captureMask.contains(square.getPiece())) continue;
+
+                // Generate promotion moves
+                if(piece.getType() == Piece.PAWN) {
+                    if(square.getRank() == 7 || square.getRank() == 0) {
+                        if(piece.getColor() == Piece.WHITE) {
+                            legalMoves.add(new Move(startSquare, square, MoveFlags.PROMOTE_PLAYER));
+                        }
+                        else {
+                            legalMoves.add(new Move(startSquare, square, MoveFlags.PROMOTE_QUEEN));
+                            legalMoves.add(new Move(startSquare, square, MoveFlags.PROMOTE_BISHOP));
+                            legalMoves.add(new Move(startSquare, square, MoveFlags.PROMOTE_ROOK));
+                            legalMoves.add(new Move(startSquare, square, MoveFlags.PROMOTE_KNIGHT));
+                        }
+                        continue;
+                    }
                 }
+
+                legalMoves.add(new Move(startSquare, square, MoveFlags.NONE));
             }
         }
 
@@ -427,6 +443,7 @@ public class MoveGenerator {
         if(!kingDangerSquares && square.getPiece() == null) {
             squares.add(square);
         }
+
         // Pawn only attacks diagonally in the forward direction
         for(directionIndex = Directions.LEFT; directionIndex <= Directions.RIGHT; directionIndex += 4) {
             int[] numberSquaresToBorder = square.getNumberOfSquaresToBorder();
@@ -571,9 +588,13 @@ public class MoveGenerator {
                 newRookSquareIndex = moveDone.targetSquare().getIndex() + Board.OFFSETS[Directions.RIGHT];
                 completeCastleMove(rookSquareIndex, newRookSquareIndex);
             }
-            default -> {
+            case MoveFlags.PROMOTE_PLAYER -> {
+                int type = (int) board.createTransformDialog(pieceMoved.getColor());
+                pieceMoved.transformInto(type);
             }
-            // Promotion moves are handled here since there is four types of promotion moves
+            // AI Promotion moves are handled here since there is four types of promotion moves
+            default -> completePromotionMove(moveDone);
+
         }
     }
 
@@ -584,5 +605,16 @@ public class MoveGenerator {
         rookSquare.removePiece();
         newRookSquare.addPiece(rook);
         rook.positionIndex = newRookSquare.getIndex();
+    }
+
+    private void completePromotionMove(Move move) {
+        int moveFlag = move.moveFlag();
+
+        switch (moveFlag) {
+            case MoveFlags.PROMOTE_QUEEN -> move.targetSquare().getPiece().transformInto(Piece.QUEEN);
+            case MoveFlags.PROMOTE_BISHOP -> move.targetSquare().getPiece().transformInto(Piece.BISHOP);
+            case MoveFlags.PROMOTE_ROOK -> move.targetSquare().getPiece().transformInto(Piece.ROOK);
+            case MoveFlags.PROMOTE_KNIGHT -> move.targetSquare().getPiece().transformInto(Piece.KNIGHT);
+        }
     }
 }
