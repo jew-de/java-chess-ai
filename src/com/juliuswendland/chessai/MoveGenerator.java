@@ -350,6 +350,12 @@ public class MoveGenerator {
         if(!piece.doubleMovePossible) return null;
 
         int directionIndex = piece.getColor() == Piece.WHITE ? Directions.TOP : Directions.BOTTOM;
+
+        // Check if double pawn push is blocked by another piece
+        int indexToCheck = piece.positionIndex + Board.OFFSETS[directionIndex];
+        Square squareToCheck = (Square) board.getComponent(indexToCheck);
+        if(squareToCheck.getPiece() != null) return null;
+
         int index = piece.positionIndex + (Board.OFFSETS[directionIndex] * 2);
         Square startSquare = (Square) board.getComponent(piece.positionIndex);
         Square square = (Square) board.getComponent(index);
