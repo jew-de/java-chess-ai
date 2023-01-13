@@ -557,6 +557,8 @@ public class MoveGenerator {
     }
 
     public void handleMove(Piece pieceMoved, Move moveDone) {
+        board.colorAtMove = board.colorAtMove == Piece.DARK ? Piece.WHITE : Piece.DARK;
+
         // Handle special pieces
         pieceMoved.doubleMovePossible = false;
 
@@ -601,8 +603,10 @@ public class MoveGenerator {
             }
             // AI Promotion moves are handled here since there is four types of promotion moves
             default -> completePromotionMove(moveDone);
-
         }
+
+        board.legalMoves = board.moveGenerator.generateLegalMoves();
+        System.out.println(board.colorAtMove);
     }
 
     private void completeCastleMove(int rookSquareIndex, int newRookSquareIndex) {

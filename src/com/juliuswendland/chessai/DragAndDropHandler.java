@@ -28,7 +28,7 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         // Keep relative position of piece to mouse
         Point parentLocation = componentAtMouse.getParent().getLocation();
         pieceToMove = (Piece) componentAtMouse;
-        if(pieceToMove.getColor() != board.colorAtMove) {
+        if(pieceToMove.getColor() != board.colorAtMove || pieceToMove.getColor() == Piece.DARK) {
             pieceToMove = null;
             return;
         }
@@ -114,7 +114,6 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         targetSquare.addPiece(pieceToMove);
         pieceToMove.positionIndex = targetSquare.getIndex();
         pieceToMove.hasMovesPreviously = true;
-        board.colorAtMove = board.colorAtMove == Piece.WHITE ? Piece.DARK : Piece.WHITE;
 
         // Reset all squares
         board.resetAllSquares();
@@ -123,8 +122,8 @@ public class DragAndDropHandler implements MouseListener, MouseMotionListener {
         Move moveDone = board.getMove(startSquare, targetSquare);
         board.moveGenerator.handleMove(pieceToMove, moveDone);
 
-        // Generate possible moves for new position
-        board.legalMoves = board.moveGenerator.generateLegalMoves();
+        // Next move is the AIs move
+        board.choseComputerMove();
     }
 
     @Override

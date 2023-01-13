@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Random;
 
 public class Board extends JLayeredPane {
     public static final Color DARK_COLOR = new Color(150, 80, 14);
@@ -19,6 +20,7 @@ public class Board extends JLayeredPane {
     public int colorAtMove = 1;
     public MoveGenerator moveGenerator;
     public boolean[][] possibleCastles = {{true, true}, {true, true}};
+    public Map<Move, Piece> moveHistory = new HashMap<>();
 
     public Board(String fen) {
         Dimension boardSize = new Dimension(1000, 1000);
@@ -49,6 +51,52 @@ public class Board extends JLayeredPane {
         legalMoves = moveGenerator.generateLegalMoves();
     }
 
+    public void choseComputerMove() {
+        // TODO remove this
+        if(legalMoves.size() == 0) return;
+
+        // Choose a random move
+        int minMoveIndex = 0;
+        int maxMoveIndex = legalMoves.size();
+        Random random = new Random();
+        int moveIndex = random.nextInt(maxMoveIndex) + minMoveIndex;
+
+        Move move = legalMoves.get(moveIndex);
+        makeMove(move);
+    }
+
+    public void makeMove(Move move) {
+        Square startSquare = move.startSquare();
+        Square targetSquare = move.targetSquare();
+        Piece piece = startSquare.getPiece();
+
+        // Captured piece isn't always on target square because of en passant moves
+        Piece capturedPiece;
+        Square capturedSquare;
+
+        if(move.moveFlag() == MoveFlags.EN_PASSANT) {
+            int capturedPieceDirection = piece.getColor() == Piece.WHITE ? Directions.BOTTOM : Directions.TOP;
+            int capturedSquareIndex = targetSquare.getIndex() + OFFSETS[capturedPieceDirection];
+            capturedSquare = (Square) getComponent(capturedSquareIndex);
+        }
+        else {
+            capturedSquare = targetSquare;
+        }
+        capturedPiece = capturedSquare.getPiece();
+
+        // Remove piece from start square and add to target square
+        startSquare.removePiece();
+        targetSquare.removePiece();
+        targetSquare.addPiece(piece);
+        piece.positionIndex = targetSquare.getIndex();
+
+        // Handle special moves
+        moveGenerator.handleMove(piece, move);
+
+        // Add to moveHistory to make it possible to unmake the move later
+        moveHistory.put(move, capturedPiece);
+    }
+
     public LinkedList<Square> getSquaresBetweenTwoPieces(Piece pieceOne, Piece pieceTwo) {
         LinkedList<Square> squares = new LinkedList<>();
 
@@ -56,6 +104,8 @@ public class Board extends JLayeredPane {
         Square startSquare = (Square) getComponent(index);
         int[] numberSquaresToBorder = startSquare.getNumberOfSquaresToBorder();
 
+        // Start going to the edge of the board until you reach the desired second square
+        // If edge is reached then there are no squares in between
         for(int directionIndex = Directions.LEFT; directionIndex <= Directions.BOTTOM_LEFT; directionIndex++) {
             squares.clear();
             index = pieceOne.positionIndex;
